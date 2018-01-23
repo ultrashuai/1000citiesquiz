@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>1000 US Cities Quiz</title>
+		<meta charset="utf-8" />
+		<script type="text/javascript">
+			var citiesObj, citiesArray, answered;
+			answered = 0;
+			
+			onload = function () {				
+				var col = document.getElementById('column1');
+				for (var i = 0; i < citiesObj.length; i++) {
+					var cityName = citiesObj[i].city.toLowerCase().replace(/[ \.']/g, '');
+					if (cityName.indexOf('-') > -1) {
+						if (cityName == 'winston-salem')
+							cityName = 'winstonsalem';
+						else if (cityName == 'wilkes-barre')
+							cityName = 'wilkesbarre';
+						else
+							cityName = cityName.replace(/^(.+)\-.+$/, '$1');
+					}
+					if (cityName.indexOf('/') > -1)
+						cityName = cityName.replace(/^(.+)\/.+$/, '$1');
+					if (cityName.indexOf('(') > -1)
+						cityName = cityName.replace(/^.+\((.+)\)$/, '$1');
+					
+					if (i < 999 && ((i + 1) % 250) == 0)
+						col = document.getElementById('column' + (parseInt(col.id.substr(-1)) + 1));
+					var div = document.createElement('div');
+					var txt = document.createTextNode((i + 1) + '. ');
+					div.appendChild(txt);
+					var input = document.createElement('input');
+					input.type = 'text';
+					input.id = 'txt' + i;
+					input.setAttribute('data-city', cityName);
+					input.setAttribute('data-index', i);
+					input.onkeyup = testAnswer;
+					div.appendChild(input);
+					col.appendChild(div);
+					citiesArray.push(cityName);
+				}
+				
+				document.getElementById('entry').onkeyup = testAnswer;
+				document.getElementById('status').innerHTML = answered + ' of ' + citiesObj.length;
+			}
+			
+			function loadCities (obj) {
+				citiesObj = obj;
+				citiesArray = [];
+			}
+			
+			function testAnswer (ev) {
+				var val,answer,idx,num;
+				answer = this.value.toLowerCase().replace(/[ \.]/g, '');
+				if (val = this.getAttribute('data-city')) {
+					idx = this.getAttribute('data-index');
+					if (answer == val)
+						return setAnswer(this, idx);
+					if (answer.substr(0, 2) == 'st' && ('saint' + answer.substr(2)) == val)
+						return setAnswer(this, idx);
+					if (answer.substr(0, 2) == 'ft' && ('fort' + answer.substr(2)) == val)
+						return setAnswer(this, idx);
+				}
+				else {
+					if (idx = searchLoop(answer)) {
+						setAnswer(document.getElementById('txt' + idx), idx);
+						while (idx = searchLoop(answer, idx + 1)) {
+							console.log('answer' + idx);
+							setAnswer(document.getElementById('txt' + idx), idx);
+						}
+					}
+				}
+			}
+			
+			function searchLoop (answer) {
+				var idx, found;
+				var lastIndex = (searchLoop.arguments.length > 1) ? searchLoop.arguments[1] : 0;
+				idx = citiesArray.indexOf(answer, lastIndex);
+				if (idx > -1 && !citiesObj[idx].found)
+					found = true;
+				else if (answer.indexOf('ft') > -1) {
+					idx = citiesArray.indexOf(answer.replace(/ft/, 'fort'), lastIndex);
+					if (idx > -1 && !citiesObj[idx].found)
+						found = true;
+				}
+				else if (answer.indexOf('st') > -1) {
+					idx = citiesArray.indexOf(answer.replace(/st/, 'saint'), lastIndex);
+					if (idx > -1 && !citiesObj[idx].found)
+						found = true;
+				}
+				
+				if (found) {
+					citiesObj[idx].found = true;
+					return idx;
+				}
+				return null;
+			}
+			
+			function setAnswer (ele, i) {
+				var txt = document.createTextNode(citiesObj[i].city + ', ' + citiesObj[i].state + ' (' + citiesObj[i].population + ')');
+				ele.parentNode.appendChild(txt);
+				animateIt(ele.parentNode);
+				ele.parentNode.removeChild(ele);
+				document.getElementById('entry').value = '';
+				answered++;
+				document.getElementById('status').innerHTML = answered + ' of ' + citiesObj.length;
+				if (answered == 1000)
+					document.getElementById('lastAnswer').innerHTML = '<strong>Done</strong>';
+				else
+					document.getElementById('lastAnswer').innerHTML = txt.textContent;
+			}
+			
+			function animateIt (ele) {
+				ele.style.background = '#0FF';
+				ele.style.color = '#FFF';
+				setTimeout(function () {
+					ele.style.background = '';
+					ele.style.color = '';
+				}, 1500);
+			}
+		</script>
+		<script type="text/javascript" src="cities.json"></script>
+		<style type="text/css">
+			body {
+				font-family:Helvetica,sans-serif;
+				font-size:10px;
+			}
+			p {
+				text-align:center;
+				font-size:1.2em;
+				margin:5px 0;
+			}
+			.column {
+				width:250px;
+				float:left;
+			}
+			.column div {
+				clear:left;
+			}
+		</style>
+	</head>
+	<body>
+		<p id="lastAnswer">&nbsp;</p>
+		<p><input type="text" id="entry" size="50" /></p>
+		<p id="status"></p>
+		<div id="column1" class="column"></div>
+		<div id="column2" class="column"></div>
+		<div id="column3" class="column"></div>
+		<div id="column4" class="column"></div>
+	</body>
+</html>
